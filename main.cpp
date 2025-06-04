@@ -1,84 +1,7 @@
-#include <cctype>
 #include <cstring>
 #include <iostream>
 #include <algorithm> // Para std::max
 using namespace std;
-
-// Hash Table
-template <typename T>
-struct DictEntry {
-    T chave;
-    T valor;
-    DictEntry* proximo;
-
-    DictEntry(T c, T v) : chave(c), valor(v), proximo(nullptr) {}
-};
-
-template <typename T> 
-class HashTable {
-private:
-    DictEntry<T>** tabela;
-    size_t tamanho;
-
-    size_t hash(const T& key, size_t m) {
-        size_t valor_hash = 0;
-        size_t n = key.length();
-        for (size_t i = 0; i < n; ++i) {
-            size_t potencia = 1;
-            for (size_t j = 0; j < n - i - 1; ++j) {
-                potencia *= 128;
-            }
-            valor_hash += key[i] * potencia;
-            valor_hash %= m;
-        }
-        return valor_hash;
-    }
-
-public:
-    HashTable(size_t m) {
-        tamanho = m;
-        tabela = new DictEntry<T>*[tamanho];
-        for (size_t i = 0; i < tamanho; ++i) {
-            tabela[i] = nullptr;
-        }
-    }
-
-    ~HashTable() {
-        for (size_t i = 0; i < tamanho; ++i) {
-            DictEntry<T>* atual = tabela[i];
-            while (atual != nullptr) {
-                DictEntry<T>* temp = atual;
-                atual = atual->proximo;
-                delete temp;
-            }
-        }
-        delete[] tabela;
-    }
-
-    void insert(const T& key, const DictEntry<T>& entrada) {
-        size_t indice = hash(key, tamanho);
-        DictEntry<T>* novo = new DictEntry<T>(entrada.chave, entrada.valor);
-        novo->proximo = tabela[indice];
-        tabela[indice] = novo;
-    }
-
-    std::string search(const T& key) {
-        size_t indice = hash(key, tamanho);
-        DictEntry<T>* atual = tabela[indice];
-        while (atual != nullptr) {
-            if (atual->chave == key) return atual->valor;
-            atual = atual->proximo;
-        }
-        return "";
-    }
-
-    bool empty() const {
-        for (size_t i = 0; i < tamanho; ++i) {
-            if (tabela[i] != nullptr) return false;
-        }
-        return true;
-    }
-};
 
 // Nó da Árvore Binária de Busca (BST)
 template <typename T>
@@ -279,6 +202,54 @@ void BST<T>::Remove(const T& item) {
         root->setParent(nullptr);
     }
 }
+
+
+// Dict Entry
+template <typename KeyType, typename ValueType>
+class Entry {
+public:
+    KeyType key;
+    ValueType value;
+    Entry* proximo;
+
+    Entry<KeyType, ValueType>(KeyType k, ValueType v) : key(k), value(v), proximo(nullptr) {}
+};
+
+// Hash Table
+template <typename KeyType, typename ValueType>
+class HashTable {
+private:
+    Entry<KeyType, ValueType>** tabela;
+    int Hash(KeyType Key, int tamanho);
+
+public:
+    void insert(KeyType Key, ValueType Item);
+    bool remove(KeyType Key);
+    bool search(KeyType Key, ValueType Item);
+    int length();
+    bool empty();
+    int loadFactor();
+
+};
+
+template<typename KeyType, typename ValueType>
+int HashTable<KeyType, ValueType>::Hash(KeyType key, int tamanho) {
+    size_t valor_hash = 0;
+    const size_t n = key.length();
+
+    for (size_t i = 0; i < n; ++i) {
+        size_t potencia = 1;
+        for (size_t j = 0; j < n - i - 1; ++j) {
+            potencia *= 128;
+        }
+        valor_hash += key[i] * potencia;
+        valor_hash %= tamanho;
+    }
+    return valor_hash;
+}
+
+
+
 
 int main() {
 
