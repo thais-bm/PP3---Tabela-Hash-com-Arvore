@@ -1,6 +1,6 @@
 #include <cstring>
 #include <iostream>
-#include <algorithm> // Para std::max
+#include <cmath>
 using namespace std;
 
 // Nó da Árvore Binária de Busca (BST)
@@ -14,7 +14,7 @@ private:
     int height;
 
 public:
-    BSTNode(T item) : item(item), left(nullptr), right(nullptr), parent(nullptr), height(1) {}
+    explicit BSTNode(T item) : item(item), left(nullptr), right(nullptr), parent(nullptr), height(1) {}
     T getItem() const { return item; }
     void setItem(T val) { item = val; }
 
@@ -61,6 +61,9 @@ private:
     BSTNode<T>* leftRotate(BSTNode<T>* node_x);
     BSTNode<T>* rebalance(BSTNode<T>* node);
 
+    // Calculadora de altura
+    void calculateHeight(BSTNode<T>* node);
+
     void ProcessNode(BSTNode<T>* node);
     void PreOrderHelper(BSTNode<T>* node);
     void CentralOrderHelper(BSTNode<T>* node);
@@ -68,6 +71,8 @@ private:
 
     BSTNode<T>* InsertHelper(BSTNode<T>* currentNode, const T& item);
     BSTNode<T>* RemoveHelper(BSTNode<T>* currentNode, const T& item);
+
+    void updateHeight(BSTNode<T> *node);
 
     int getNodeHeight(BSTNode<T>* node) const;
 
@@ -86,6 +91,12 @@ public:
 
     void Remove(const T &item);
 };
+
+template<typename T>
+void BST<T>::calculateHeight(BSTNode<T>* node) {
+    node->setHeight(1 + fmax(getNodeHeight(node->getLeft()), getNodeHeight(node->getRight())));
+}
+
 
 template <typename T>
 int BST<T>::getNodeHeight(BSTNode<T>* node) const {
@@ -109,6 +120,15 @@ void BST<T>::ProcessNode(BSTNode<T>* node) {
     cout << node->getItem() << " ";
     cout << "Altura: " << node->getHeight() << endl;
     cout << "Fator de Balanceamento: " << getBalanceFactor(node) << endl;
+    if (node->getParent()) {
+        cout << "pai: " << node->getParent()->getItem() << endl;
+    }
+    if (node->getLeft()) {
+        cout << "filho esq: " << node->getLeft()->getItem() << endl;
+    }
+    if (node->getRight()) {
+        cout << "filho dir: " << node->getRight()->getItem() << endl;
+    }
 }
 
 template <typename T>
@@ -219,8 +239,8 @@ BSTNode<T>* BST<T>::rightRotate(BSTNode<T>* node) {
     // vc atualiza debaixo pra cima: pq é assim q conta altura. enfim
     // primeiro o node q desceu
     // dps a nova raiz
-    node->setHeight(1 + std::max(getNodeHeight(node->getLeft()), getNodeHeight(node->getRight())));
-    x->setHeight(1 + std::max(getNodeHeight(x->getLeft()), getNodeHeight(x->getRight())));
+    calculateHeight(node);
+    calculateHeight(x);
 
     return x;
 }
@@ -242,17 +262,15 @@ BSTNode<T> *BST<T>::leftRotate(BSTNode<T>* node) {
     node->setRight(orfao);
 
     // arrumando as alturas
-    node->setHeight(1+std::max(getNodeHeight(node->getLeft()), getNodeHeight(node->getRight())));
-    x->setHeight(1+std::max(getNodeHeight(x->getLeft()), getNodeHeight(x->getRight())));
-
+    calculateHeight(node);
+    calculateHeight(x);
     return x; // novo topo
 }
 
 template<typename T>
 BSTNode<T>* BST<T>::rebalance(BSTNode<T>* node) {
-    cout << "Entrando em rebalance com no: " << node->getItem() << endl;
     // calcular a altura do nó atual + calcular fator de balanceamento
-    node->setHeight(1+std::max(getNodeHeight(node->getLeft()), getNodeHeight(node->getRight())));
+    calculateHeight(node);
     int balance_factor = getBalanceFactor(node);
 
     /*
@@ -304,9 +322,6 @@ BSTNode<T>* BST<T>::rebalance(BSTNode<T>* node) {
     // nao precisa balancear, ja ta
     return node;
 }
-
-
-
 
 
 // Classes Publicas
