@@ -247,6 +247,63 @@ BSTNode<T> *BST<T>::leftRotate(BSTNode<T>* node) {
     return x; // novo topo
 }
 
+template<typename T>
+BSTNode<T>* BST<T>::rebalance(BSTNode<T>* node) {
+    // calcular a altura do nó atual + calcular fator de balanceamento
+    node->setHeight(1+std::max(getNodeHeight(node->getLeft()), getNodeHeight(node->getRight())));
+    int balance_factor = getBalanceFactor(node);
+
+    /*
+     * FB = altura direita - altura esquerda
+     *
+     * Existem 4 possibilidades nesse gira-gira
+     * 1. Direita simples
+     * 2. Esquerda simples
+     * 3. Gira pra esquerda e dps pra direita
+     * 4. Gira pra direita e dps pra esquerda
+    */
+
+    // caso 1: Esquerda-Esquerda
+    // Condicao 1: FB menor que -1
+    // Condicao 2: FB do filho esq -> -1 ou 0 (pq se mexer, ele vai pra 0 ou +1
+    // assim vai ficar na regra
+
+    if (balance_factor < -1 && getBalanceFactor(node->getLeft()) <= 0) {
+        return rightRotate(node);
+    }
+
+    // caso 2: Direita-Direita
+    // condicao 1: FB maior -1 (pra dizer q ta desbalanceado)
+    // filho esq: 0 ou +1, pq ao ir pra direita, ele vai cair pra -1 ou 0
+    if (balance_factor > 1 && getBalanceFactor(node->getRight()) >= 0) {
+        return leftRotate(node);
+    }
+
+    // caso 3: Esquerda e direita (rotacao dupla)
+    // ideia: botar o node no filho direito do filho esquerdo kkkk
+    // vai subir o filho esquerdo do filho do node
+    // condicao 1: FB menor q -1
+    // Codncao 2: FB do filho esquerdo tem q ser 1, pq ele vai pra -2, se for -1, vai cair pra -3 e dar desbalanceamento
+    if (balance_factor < -1 && getBalanceFactor(node->getLeft()) > 0) {
+        node->setLeft(leftRotate(node.getLeft()));
+        return rightRotate(node);
+    }
+
+    // caso 4: Direita e esquerda
+    // node vira filho esquerdo do filho direito
+    // sobe: filho direito do filho esquerdo do node
+    // condicao 1: FB maior q 1
+    // condicao 2: fb do filho direito tem que ser -1, senao, da o b.o de: 2 e 3
+    if (balance_factor > 1 && getBalanceFactor(node->getRight()) < 0) {
+        node->setRight(rightRotate(node.getRight()));
+        return leftRotate(node);
+    }
+
+    // nao ta desbalanceado
+    return node;
+}
+
+
 
 
 
