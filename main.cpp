@@ -50,14 +50,25 @@ template <typename T>
 class BST {
 private:
     BSTNode<T>* root;
+
     BSTNode<T>* SearchHelper(const T& item, BSTNode<T>* node);
+
+    // Coisas de AVL
+    int getBalanceFactor(BSTNode<T>* node) const;
+    BSTNode<T>* rightRotate(BSTNode<T>* node_y);
+    BSTNode<T>* leftRotate(BSTNode<T>* node_x);
+    BSTNode<T>* rebalance(BSTNode<T>* node);
+
     void ProcessNode(BSTNode<T>* node);
     void PreOrderHelper(BSTNode<T>* node);
     void CentralOrderHelper(BSTNode<T>* node);
     void PostOrderHelper(BSTNode<T>* node);
+
     BSTNode<T>* InsertHelper(BSTNode<T>* currentNode, const T& item);
     BSTNode<T>* RemoveHelper(BSTNode<T>* currentNode, const T& item);
+
     int getNodeHeight(BSTNode<T>* node) const;
+
     void destroy(BSTNode<T>* node);
 
 public:
@@ -70,7 +81,8 @@ public:
     void PostOrder() { PostOrderHelper(root); }
 
     void Insert(const T& item);
-    bool Remove(const T& item);
+
+    void Remove(const T &item);
 };
 
 template <typename T>
@@ -177,6 +189,68 @@ void BST<T>::destroy(BSTNode<T>* node) {
     delete node;
 }
 
+template<typename T>
+int BST<T>::getBalanceFactor(BSTNode<T> *node) const {
+    BSTNode<T>* left_node = node->getLeft();
+    BSTNode<T>* right_node = node->getRight();
+    int balance_factor = right_node.getHeight() - left_node.getHeight();
+
+    return balance_factor;
+
+    /*
+        FB: -1, 0 e +1 ---> Tá OK
+        FB: -2 ou +2 ---> Desbalaceado
+    */
+}
+
+template <typename T>
+BSTNode<T>* BST<T>::rightRotate(BSTNode<T>* node) {
+    BSTNode<T>* x = node->getLeft(); // o que vai subir: node vai ocupar o lado direito dele
+    // com isso, o lado esquerdo do node vai ficar vago
+
+    BSTNode<T>* orfao = x->getRight(); // a subarvore q esta no lado direito
+    // ela n pode sumir do nada
+    // e, o lado esquerdo ta vago, entaummmm
+
+    x.setRight(node); // node vira filho de x
+    node->setLeft(orfao); // coloca o orfão no lado esquerdo e arruma o pai do node ainda
+
+    // Arruma as alturaas aff
+    // vc atualiza debaixo pra cima: pq é assim q conta altura. enfim
+    // primeiro o node q desceu
+    // dps a nova raiz
+    node->setHeight(1 + std::max(getNodeHeight(node->getLeft()), getNodeHeight(node->getRight())));
+    x->setHeight(1 + std::max(getNodeHeight(x->getLeft()), getNodeHeight(x->getRight())));
+
+    return x;
+}
+
+template<typename T>
+BSTNode<T> *BST<T>::leftRotate(BSTNode<T>* node) {
+    /*
+    o 'topo' vai descer pra ficar no lado esq do nó q vai subir
+    o orfão vai ficar morando no lado direito
+    */
+
+    BSTNode<T>* x = node->getRight(); // o que vai subir
+    BSTNode<T>* orfao = x->getLeft(); // o orfao
+
+    // botamo o node no lugar do orfao -> direitinha
+    x->setLeft(node);
+    // botao o orfao no lugar vago do x
+    node->setRight(orfao);
+
+    // arrumando as alturas
+    node->setHeight(1+std::max(getNodeHeight(node->getLeft()), getNodeHeight(node->getRight())));
+    x->setHeight(1+std::max(getNodeHeight(x->getLeft()), getNodeHeight(x->getRight())));
+
+    return x; // novo topo
+}
+
+
+
+
+// Classes Publicas
 template <typename T>
 BST<T>::~BST() {
     destroy(root);
@@ -196,19 +270,20 @@ void BST<T>::Insert(const T& item) {
 }
 
 template <typename T>
-bool BST<T>::Remove(const T& item) {
+void BST<T>::Remove(const T &item) {
     root = RemoveHelper(root, item); 
     if (root != nullptr) {
         root->setParent(nullptr);
-        return true;
-    } else {
-        return false;
+    }
 /*por algum motivo isso aqui sempre retorna false mesmo quando funciona
 pq???
 mas no fim das contas o remove nem vai ser usado no final entao n deve ser prioridade consertar isso
 mas sla seria meio estranho enviar o trabalho terminado com isso funcionando errado
-o importante e o q importa*/
-    }
+o importante e o q importa
+
+EDIT: por via das duvidas, transformei em void, meio que nem é necessario devolver nada
+*/
+
 }
 
 // Hash Table
