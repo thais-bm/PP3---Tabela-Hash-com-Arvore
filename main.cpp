@@ -18,10 +18,10 @@ public:
     T getItem() const { return item; }
     void setItem(T val) { item = val; }
 
-    BSTNode<T>* getLeft() const { return left; }
-    BSTNode<T>* getRight() const { return right; }
-    BSTNode<T>* getParent() const { return parent; }
-    int getHeight() const { return height; }
+    BSTNode<T>* getLeft() { return left; }
+    BSTNode<T>* getRight() { return right; }
+    BSTNode<T>* getParent() { return parent; }
+    int getHeight() { return height; }
 
     void setLeft(BSTNode<T>* node);
     void setRight(BSTNode<T>* node);
@@ -44,6 +44,8 @@ void BSTNode<T>::setRight(BSTNode<T>* node) {
         right->setParent(this); // 'this' é o nó atual, que se torna o pai
     }
 }
+
+
 
 // Classe da Árvore Binária de Busca (BST)
 template <typename T>
@@ -106,6 +108,7 @@ void BST<T>::ProcessNode(BSTNode<T>* node) {
     if (node == nullptr) return;
     cout << node->getItem() << " ";
     cout << "Altura: " << node->getHeight() << endl;
+    cout << "Fator de Balanceamento: " << getBalanceFactor(node) << endl;
 }
 
 template <typename T>
@@ -144,9 +147,8 @@ BSTNode<T>* BST<T>::InsertHelper(BSTNode<T>* currentNode, const T& item) {
         return currentNode;
     }
 
-    // Atualiza a altura do currentNode APÓS a modificação em seus filhos
-    currentNode->setHeight(1 + std::max(getNodeHeight(currentNode->getLeft()), getNodeHeight(currentNode->getRight())));
-    return currentNode;
+    // depois de tudo, bota pra balancear
+    return rebalance(currentNode);
 }
 
 template <typename T>
@@ -177,8 +179,8 @@ BSTNode<T>* BST<T>::RemoveHelper(BSTNode<T>* currentNode, const T& item) {
         currentNode->setRight(RemoveHelper(currentNode->getRight(), successor->getItem()));
     }
     
-    currentNode->setHeight(1 + std::max(getNodeHeight(currentNode->getLeft()), getNodeHeight(currentNode->getRight())));
-    return currentNode;
+    // depois de tudo, bota pra balancear
+    return rebalance(currentNode);
 }
 
 template <typename T>
@@ -191,11 +193,8 @@ void BST<T>::destroy(BSTNode<T>* node) {
 
 template<typename T>
 int BST<T>::getBalanceFactor(BSTNode<T> *node) const {
-    BSTNode<T>* left_node = node->getLeft();
-    BSTNode<T>* right_node = node->getRight();
-    int balance_factor = right_node.getHeight() - left_node.getHeight();
-
-    return balance_factor;
+    if (node == nullptr) return 0; // pro null
+    return getNodeHeight(node->getRight()) - getNodeHeight(node->getLeft());
 
     /*
         FB: -1, 0 e +1 ---> Tá OK
@@ -205,6 +204,7 @@ int BST<T>::getBalanceFactor(BSTNode<T> *node) const {
 
 template <typename T>
 BSTNode<T>* BST<T>::rightRotate(BSTNode<T>* node) {
+    cout << "Comecando o right rotate do: " << node->getItem() << endl;
     BSTNode<T>* x = node->getLeft(); // o que vai subir: node vai ocupar o lado direito dele
     // com isso, o lado esquerdo do node vai ficar vago
 
@@ -212,7 +212,7 @@ BSTNode<T>* BST<T>::rightRotate(BSTNode<T>* node) {
     // ela n pode sumir do nada
     // e, o lado esquerdo ta vago, entaummmm
 
-    x.setRight(node); // node vira filho de x
+    x->setRight(node); // node vira filho de x
     node->setLeft(orfao); // coloca o orfão no lado esquerdo e arruma o pai do node ainda
 
     // Arruma as alturaas aff
@@ -227,6 +227,7 @@ BSTNode<T>* BST<T>::rightRotate(BSTNode<T>* node) {
 
 template<typename T>
 BSTNode<T> *BST<T>::leftRotate(BSTNode<T>* node) {
+    cout << "Comecando o left rotate do: " << node->getItem() << endl;
     /*
     o 'topo' vai descer pra ficar no lado esq do nó q vai subir
     o orfão vai ficar morando no lado direito
@@ -249,6 +250,7 @@ BSTNode<T> *BST<T>::leftRotate(BSTNode<T>* node) {
 
 template<typename T>
 BSTNode<T>* BST<T>::rebalance(BSTNode<T>* node) {
+    cout << "Entrando em rebalance com no: " << node->getItem() << endl;
     // calcular a altura do nó atual + calcular fator de balanceamento
     node->setHeight(1+std::max(getNodeHeight(node->getLeft()), getNodeHeight(node->getRight())));
     int balance_factor = getBalanceFactor(node);
@@ -285,7 +287,7 @@ BSTNode<T>* BST<T>::rebalance(BSTNode<T>* node) {
     // condicao 1: FB menor q -1
     // Codncao 2: FB do filho esquerdo tem q ser 1, pq ele vai pra -2, se for -1, vai cair pra -3 e dar desbalanceamento
     if (balance_factor < -1 && getBalanceFactor(node->getLeft()) > 0) {
-        node->setLeft(leftRotate(node.getLeft()));
+        node->setLeft(leftRotate(node->getLeft()));
         return rightRotate(node);
     }
 
@@ -295,11 +297,11 @@ BSTNode<T>* BST<T>::rebalance(BSTNode<T>* node) {
     // condicao 1: FB maior q 1
     // condicao 2: fb do filho direito tem que ser -1, senao, da o b.o de: 2 e 3
     if (balance_factor > 1 && getBalanceFactor(node->getRight()) < 0) {
-        node->setRight(rightRotate(node.getRight()));
+        node->setRight(rightRotate(node->getRight()));
         return leftRotate(node);
     }
 
-    // nao ta desbalanceado
+    // nao precisa balancear, ja ta
     return node;
 }
 
@@ -408,7 +410,6 @@ bool HashTable<T>::search(T item) {
 
 int main() {
 
-/*
     // Pedi pro Gemini criar esse teste de árvore binária de busca (BST) com inserção, busca e remoção de nós.
     // Falta implementar o Auto-balançeamento (AVL) ou Red-Black Tree, mas isso é um bom começo.
     // Tabela Hash de qualidade duvidosa -> nao testado
@@ -527,8 +528,8 @@ int main() {
 
     std::cout << "\n>>> FIM DOS TESTES <<<" << std::endl;
     std::cout << "O destrutor da arvore sera chamado automaticamente ao sair do main, limpando os nos restantes." << std::endl;
-*/
-    //to testando tabela aqui
+
+ /*   //to testando tabela aqui
     HashTable<string> tabela;
     tabela.insert("121");
     tabela.insert("120");
@@ -560,7 +561,7 @@ int main() {
     if (tabela.remove("124") == false) {
         cout << "??" << endl;
     }
-
+*/
     return 0;
 }
 
