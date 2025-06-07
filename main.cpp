@@ -14,14 +14,14 @@ private:
     int height;
 
 public:
-    explicit BSTNode(T item) : item(item), left(nullptr), right(nullptr), parent(nullptr), height(1) {}
+    BSTNode(T item) : item(item), left(nullptr), right(nullptr), parent(nullptr), height(1) {}
     T getItem() const { return item; }
     void setItem(T val) { item = val; }
 
-    BSTNode<T>* getLeft() { return left; }
-    BSTNode<T>* getRight() { return right; }
-    BSTNode<T>* getParent() { return parent; }
-    int getHeight() { return height; }
+    BSTNode<T>* getLeft() const { return left; }
+    BSTNode<T>* getRight() const { return right; }
+    BSTNode<T>* getParent() const { return parent; }
+    int getHeight() const { return height; }
 
     void setLeft(BSTNode<T>* node);
     void setRight(BSTNode<T>* node);
@@ -30,7 +30,7 @@ public:
 };
 
 template <typename T>
-void BSTNode<T>::setLeft(BSTNode<T>* node) { 
+void BSTNode<T>::setLeft(BSTNode<T>* node) {
     left = node;
     if (left != nullptr) {
         left->setParent(this); // 'this' é o nó atual, que se torna o pai
@@ -38,8 +38,8 @@ void BSTNode<T>::setLeft(BSTNode<T>* node) {
 }
 
 template <typename T>
-void BSTNode<T>::setRight(BSTNode<T>* node) { 
-    right = node; 
+void BSTNode<T>::setRight(BSTNode<T>* node) {
+    right = node;
     if (right != nullptr) {
         right->setParent(this); // 'this' é o nó atual, que se torna o pai
     }
@@ -81,6 +81,7 @@ private:
 public:
     BST() : root(nullptr) {}
     ~BST();
+    BSTNode<T>* getRoot() const { return root; } // so existe pq tem q medir a altura a partir da raizz da arvore aparentemente
 
     BSTNode<T>* Search(const T& item);
     void PreOrder() { PreOrderHelper(root); }
@@ -163,7 +164,6 @@ BSTNode<T>* BST<T>::InsertHelper(BSTNode<T>* currentNode, const T& item) {
     if (item < currentNode->getItem()) currentNode->setLeft(InsertHelper(currentNode->getLeft(), item));
     else if (item > currentNode->getItem()) currentNode->setRight(InsertHelper(currentNode->getRight(), item));
     else {
-        cout << "Item ja existe: " << item << endl;
         return currentNode;
     }
 
@@ -198,7 +198,7 @@ BSTNode<T>* BST<T>::RemoveHelper(BSTNode<T>* currentNode, const T& item) {
         currentNode->setItem(successor->getItem());
         currentNode->setRight(RemoveHelper(currentNode->getRight(), successor->getItem()));
     }
-    
+
     // depois de tudo, bota pra balancear
     return rebalance(currentNode);
 }
@@ -224,7 +224,6 @@ int BST<T>::getBalanceFactor(BSTNode<T> *node) const {
 
 template <typename T>
 BSTNode<T>* BST<T>::rightRotate(BSTNode<T>* node) {
-    cout << "Comecando o right rotate do: " << node->getItem() << endl;
     BSTNode<T>* x = node->getLeft(); // o que vai subir: node vai ocupar o lado direito dele
     // com isso, o lado esquerdo do node vai ficar vago
 
@@ -247,7 +246,6 @@ BSTNode<T>* BST<T>::rightRotate(BSTNode<T>* node) {
 
 template<typename T>
 BSTNode<T> *BST<T>::leftRotate(BSTNode<T>* node) {
-    cout << "Comecando o left rotate do: " << node->getItem() << endl;
     /*
     o 'topo' vai descer pra ficar no lado esq do nó q vai subir
     o orfão vai ficar morando no lado direito
@@ -336,8 +334,8 @@ BSTNode<T>* BST<T>::Search(const T& item) {
 }
 
 template <typename T>
-void BST<T>::Insert(const T& item) { 
-    root = InsertHelper(root, item); 
+void BST<T>::Insert(const T& item) {
+    root = InsertHelper(root, item);
     if (root != nullptr) {
         root->setParent(nullptr);
     }
@@ -345,7 +343,7 @@ void BST<T>::Insert(const T& item) {
 
 template <typename T>
 void BST<T>::Remove(const T &item) {
-    root = RemoveHelper(root, item); 
+    root = RemoveHelper(root, item);
     if (root != nullptr) {
         root->setParent(nullptr);
     }
@@ -359,12 +357,22 @@ EDIT: por via das duvidas, transformei em void, meio que nem é necessario devol
 */
 
 }
+/*
+ *
+ *
+*/
 
 // Hash Table
 template <typename T>
 class HashTable {
 private:
-    BST<T>* tabela;
+    BST<T>** tabela;
+    // edit
+    // motivo do ponteiro de ponteiro pra consumir menos memoria
+    // porque ai, nao vai existir 151 objetos logo de cara, mas 151 referencias q podem ser nullptr
+    // se nao for nullptr, sao objetos validos hihi
+    // enfim, pesquisei pq eu tinha visto ponteiro de ponteiro no site q eu vi kkkk
+
     //mudei de ponteiro de ponteiro pra ponteiro unico pq era meio desnecessario
     //remover comentario depois
     //ou nao
@@ -372,25 +380,60 @@ private:
     //diminuir nossa nota nao vai
     //comentarios contam uma historia
     int Hash(T item, int tamanho);
-    int size;
+    int SIZE = 151;
 public:
     void insert(T item);
-    bool remove(T item); //na teoria nao precisa remover nada pra fazer o que precisa no hackerrank..
+    void remove(T item); //na teoria nao precisa remover nada pra fazer o que precisa no hackerrank..
     //mas agora vou tentar fazer funcionar
-    bool search(T item);
+    bool search(T item); // to fazendo retornar o proprio nó
     int length();
     bool empty();
-    int loadFactor();
+
+    void buscarMostrarAltura(T key);
+
     HashTable() {
-        size = 10;
-        cout << "lembrete pra mudar o tamanho pra o que tiver sido especificado no enunciado nao lembro qual foi mas botei 10 pra testar" << endl;
-        tabela = new BST<T>[size];
+        tabela = new BST<T>*[SIZE];
+
+        // deixar geral nullptr para existir as 'gavetas'
+        for (int i = 0; i < SIZE; i++) {
+            tabela[i] = nullptr;
+        }
+    }
+    ~HashTable() {
+        for (int i = 0; i < SIZE; i++) {
+            if (tabela[i] != nullptr) {
+                delete tabela[i];
+            }
+        }
+        delete[] tabela;
     }
 };
 
+template <typename T>
+void HashTable<T>::buscarMostrarAltura(T key) {
+    int indice = Hash(key, SIZE);
+
+    // ja ve se existe algo
+    if (tabela[indice] == nullptr) {
+        cout << "Nao encontrado" << endl;
+    }
+
+    // a arvore gerada com o codigo hash, agora procura a chave nela
+    BST<T>* arvore = tabela[indice];
+    BSTNode<T>* noAchado = arvore->Search(key);
+
+    // nao achou ouu achou?
+    if (noAchado == nullptr) {
+        cout << "Nao encontrado" << endl;
+    }
+    else {
+        cout << "Altura: " << arvore->getRoot()->getHeight() << endl;
+    }
+}
+
 template<typename T>
 int HashTable<T>::Hash(T key, int tamanho) {
-    size_t valor_hash = 0;
+    int valor_hash = 0;
     const size_t n = key.length();
 
     for (size_t i = 0; i < n; ++i) {
@@ -406,177 +449,79 @@ int HashTable<T>::Hash(T key, int tamanho) {
 
 template<typename T>
 void HashTable<T>::insert(T item) {
-    tabela[Hash(item, size)].Insert(item);
+    int indice = Hash(item, SIZE);
+
+    // garantindo que existe kkk
+    if (tabela[indice] == nullptr) {
+        tabela[indice] = new BST<T>();
+    }
+
+    tabela[indice]->Insert(item);
 }
 
 template<typename T>
-bool HashTable<T>::remove(T item) {
-    return tabela[Hash(item, size)].Remove(item);
+void HashTable<T>::remove(T item) {
+    int indice = Hash(item, SIZE);
+
+    if (tabela[indice] == nullptr) {
+        return;
+    }
+
+    tabela[Hash(item, SIZE)]->Remove(item);
 }
 
 template<typename T>
 bool HashTable<T>::search(T item) {
-    BSTNode<T>* temp = tabela[Hash(item, size)].Search(item);
+    int indice = Hash(item, SIZE);
+
+    if (tabela[indice] == nullptr) {
+        return false;
+    }
+
+    BSTNode<T>* temp = tabela[Hash(item, SIZE)]->Search(item);
+
     if (temp == nullptr) {
         return false;
     }
-    return item == temp->getItem();
+
+    return item == temp->getItem(); // o no encontrado
+}
+
+// FUNCOES AUXILIARES AQUI
+string limpador(string palavra) {
+    string cleaned;
+    for (char c : palavra) {
+        if (!ispunct(c)) cleaned += c;;
+    }
+    if (!cleaned.empty()) {
+        return cleaned;
+    }
+    return "";
 }
 
 int main() {
-
-    // Pedi pro Gemini criar esse teste de árvore binária de busca (BST) com inserção, busca e remoção de nós.
-    // Falta implementar o Auto-balançeamento (AVL) ou Red-Black Tree, mas isso é um bom começo.
-    // Tabela Hash de qualidade duvidosa -> nao testado
-
-    std::cout << "=== TESTE DE ARVORE BINARIA DE BUSCA (BST) ===" << std::endl;
-    BST<int> arvore;
-    std::cout << ">>> FASE DE INSERCAO <<<" << std::endl;
-    arvore.Insert(50);
-    arvore.Insert(30);
-    arvore.Insert(70);
-    arvore.Insert(20);
-    arvore.Insert(40);
-    arvore.Insert(60);
-    arvore.Insert(80);
-    arvore.Insert(25);
-    arvore.Insert(35);
-    arvore.Insert(45);
-    arvore.Insert(55);
-    arvore.Insert(65);
-    arvore.Insert(75);
-    arvore.Insert(85);
-    arvore.Insert(10); // Mais um nível
-    arvore.Insert(22); // Outro
-    arvore.Insert(42); // Outro
-    arvore.Insert(78); // Outro
-
-    std::cout << "\n=== ARVORE APOS INSERCOES ===" << std::endl;
-    std::cout << "=== ORDEM PRE-ORDEM ===" << std::endl;
-    arvore.PreOrder();
-    std::cout << endl;
-    std::cout << "\n=== ORDEM CENTRAL ===" << std::endl;
-    arvore.CentralOrder();
-    std::cout << endl;
-    std::cout << "\n=== ORDEM POS-ORDEM ===" << std::endl;
-    arvore.PostOrder(); // Descomente se quiser ver o PostOrder também
-
-    std::cout << endl;
-    std::cout << "\n>>> FASE DE BUSCA <<<" << std::endl;
-    int valorParaBuscar = 40;
-    BSTNode<int>* noEncontrado = arvore.Search(valorParaBuscar);
-    if (noEncontrado) {
-        std::cout << "Elemento " << valorParaBuscar << " encontrado!" << std::endl;
-        std::cout << "  Item: " << noEncontrado->getItem()
-                  << ", Altura: " << noEncontrado->getHeight();
-        if (noEncontrado->getParent()) {
-            std::cout << ", Pai: " << noEncontrado->getParent()->getItem() << std::endl;
-        } else {
-            std::cout << ", E a raiz." << std::endl;
-        }
-    } else {
-        std::cout << "Elemento " << valorParaBuscar << " NAO encontrado." << std::endl;
-    }
-
-    std::cout << endl;
-
-    valorParaBuscar = 100; // Elemento que não existe
-    noEncontrado = arvore.Search(valorParaBuscar);
-    if (noEncontrado) {
-        std::cout << "Elemento " << valorParaBuscar << " encontrado (INESPERADO)." << std::endl;
-    } else {
-        std::cout << "Elemento " << valorParaBuscar << " NAO encontrado (esperado)." << std::endl;
-    }
-
-    std::cout << endl;
-
-    std::cout << "\n>>> FASE DE REMOCAO <<<" << std::endl;
-
-    // 1. Remover um nó folha (ex: 10)
-    int valorParaRemover = 10;
-    std::cout << "\nRemovendo " << valorParaRemover << " (folha)..." << std::endl;
-    arvore.Remove(valorParaRemover);
-    arvore.CentralOrder();
-
-    // 2. Remover um nó folha (ex: 45)
-    valorParaRemover = 45;
-    std::cout << "\nRemovendo " << valorParaRemover << " (folha)..." << std::endl;
-    arvore.Remove(valorParaRemover);
-    arvore.CentralOrder();
-
-    // 3. Remover um nó com UM filho
-    //    Ex: 80 (tinha 75 e 85, se 85 for removido primeiro, 80 só tem 75)
-    //    Vamos remover 85 primeiro para criar esse cenário.
-    std::cout << "\nRemovendo 85 para testar remocao de no com um filho (80)..." << std::endl;
-    arvore.Remove(85);
-    valorParaRemover = 80;
-    std::cout << "Removendo " << valorParaRemover << " (agora com um filho, 75)..." << std::endl;
-    arvore.Remove(valorParaRemover);
-    arvore.CentralOrder();
-    // arvore.PreOrder(); // Bom para ver estrutura e pais/alturas
-
-    // 4. Remover um nó com DOIS filhos (que não é a raiz)
-    //    Ex: 30 (filhos 20 e 40). Sucessor de 30 é 35.
-    valorParaRemover = 30;
-    std::cout << "\nRemovendo " << valorParaRemover << " (dois filhos)..." << std::endl;
-    arvore.Remove(valorParaRemover);
-    arvore.CentralOrder();
-    // arvore.PreOrder();
-
-    // 5. Remover outro nó com DOIS filhos
-    //    Ex: 70 (filhos 60 e 75 (depois que 80 e 85 foram removidos)). Sucessor é 75.
-    valorParaRemover = 70;
-    std::cout << "\nRemovendo " << valorParaRemover << " (dois filhos)..." << std::endl;
-    arvore.Remove(valorParaRemover);
-    arvore.CentralOrder();
-    arvore.PreOrder();
-
-    // 6. Remover a RAIZ (que tem dois filhos)
-    //    No estado atual, 50 é a raiz. Seus filhos são 35 (novo lugar do 30) e 60 (novo lugar do 70).
-    //    Sucessor de 50 é 55.
-    valorParaRemover = 50;
-    std::cout << "\nRemovendo " << valorParaRemover << " (RAIZ, dois filhos)..." << std::endl;
-    arvore.Remove(valorParaRemover);
-    std::cout << "Arvore apos remover a raiz original:" << std::endl;
-    arvore.PreOrder();
-    arvore.CentralOrder();
-
-    std::cout << "\n>>> FIM DOS TESTES <<<" << std::endl;
-    std::cout << "O destrutor da arvore sera chamado automaticamente ao sair do main, limpando os nos restantes." << std::endl;
-
- /*   //to testando tabela aqui
     HashTable<string> tabela;
-    tabela.insert("121");
-    tabela.insert("120");
-    tabela.insert("119");
-    tabela.insert("118");
-    tabela.insert("124");
-    tabela.insert("123");
+    string palavra;
 
-
-    if (tabela.search("123")) {
-        cout << "123" << endl;
-    }
-    if (tabela.search("120")) {
-        cout << "120" << endl;
-    }
-    if (tabela.remove("123") == false) {
-        cout << "oi" << endl;
-    }
-    if (tabela.remove("110") == false) {
-        cout << "oi" << endl;
-    }
-    if (tabela.search("123")) {
-        cout << "123" << endl;
+    // Loop para ler as palavras ate encontrar a marcação "###"
+    while (cin >> palavra && palavra != "###") {
+        string palavraLimpa = limpador(palavra);
+        if (!palavraLimpa.empty()) {
+            tabela.insert(palavraLimpa);
+        }
     }
 
-    if (tabela.remove("123")) {
-        cout << "tchau" << endl;
+    // dps do loop, proxima palavra e a chave
+    string palavraChave;
+    if (cin >> palavraChave) {
+        string chaveLimpa = limpador(palavraChave);
+        if (!chaveLimpa.empty()) {
+            tabela.buscarMostrarAltura(chaveLimpa);
+        } else {
+            cout << "Nao encontrado" << endl;
+        }
     }
-    if (tabela.remove("124") == false) {
-        cout << "??" << endl;
-    }
-*/
+
     return 0;
 }
 
