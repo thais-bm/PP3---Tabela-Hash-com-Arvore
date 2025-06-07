@@ -368,10 +368,7 @@ class HashTable {
 private:
     BST<T>** tabela;
     // edit
-    // motivo do ponteiro de ponteiro pra consumir menos memoria
-    // porque ai, nao vai existir 151 objetos logo de cara, mas 151 referencias q podem ser nullptr
-    // se nao for nullptr, sao objetos validos hihi
-    // enfim, pesquisei pq eu tinha visto ponteiro de ponteiro no site q eu vi kkkk
+    // motivo do ponteiro de ponteiro: qnd e ponteiro demora mt mais
 
     //mudei de ponteiro de ponteiro pra ponteiro unico pq era meio desnecessario
     //remover comentario depois
@@ -503,7 +500,8 @@ int main() {
     HashTable<string> tabela;
     string palavra;
 
-    // Loop para ler as palavras ate encontrar a marcação "###"
+    // Loop para ler as palavras ate achar o "###"
+    // pq demora tantooooooooooooooooooooooooooooooooooooooooooo
     while (cin >> palavra && palavra != "###") {
         string palavraLimpa = limpador(palavra);
         if (!palavraLimpa.empty()) {
