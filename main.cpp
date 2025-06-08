@@ -1,6 +1,7 @@
 #include <cstring>
 #include <iostream>
 #include <cmath>
+#include <vector>
 using namespace std;
 
 // Nó da Árvore Binária de Busca (BST)
@@ -14,7 +15,7 @@ private:
     int height;
 
 public:
-    BSTNode(T item) : item(item), left(nullptr), right(nullptr), parent(nullptr), height(1) {}
+    explicit BSTNode(T item) : item(item), left(nullptr), right(nullptr), parent(nullptr), height(1) {}
     T getItem() const { return item; }
     void setItem(T val) { item = val; }
 
@@ -71,8 +72,6 @@ private:
 
     BSTNode<T>* InsertHelper(BSTNode<T>* currentNode, const T& item);
     BSTNode<T>* RemoveHelper(BSTNode<T>* currentNode, const T& item);
-
-    void updateHeight(BSTNode<T> *node);
 
     int getNodeHeight(BSTNode<T>* node) const;
 
@@ -376,7 +375,7 @@ private:
     //alguem vai ler isso depois pode ser engracado seila
     //diminuir nossa nota nao vai
     //comentarios contam uma historia
-    int Hash(T item, int tamanho);
+    int Hash(const T& item) const;
     int SIZE = 151;
 public:
     void insert(T item);
@@ -386,7 +385,7 @@ public:
     int length();
     bool empty();
 
-    void buscarMostrarAltura(T key);
+    auto buscarMostrarAltura(T key);
 
     HashTable() {
         tabela = new BST<T>*[SIZE];
@@ -407,12 +406,12 @@ public:
 };
 
 template <typename T>
-void HashTable<T>::buscarMostrarAltura(T key) {
-    int indice = Hash(key, SIZE);
+auto HashTable<T>::buscarMostrarAltura(T key) {
+    int indice = Hash(key);
 
     // ja ve se existe algo
     if (tabela[indice] == nullptr) {
-        cout << "Nao encontrado" << endl;
+        return -1;
     }
 
     // a arvore gerada com o codigo hash, agora procura a chave nela
@@ -421,33 +420,28 @@ void HashTable<T>::buscarMostrarAltura(T key) {
 
     // nao achou ouu achou?
     if (noAchado == nullptr) {
-        cout << "Nao encontrado" << endl;
+        return -1;
     }
-    else {
-        cout << "Altura: " << arvore->getRoot()->getHeight() << endl;
-    }
+    return arvore->getRoot()->getHeight();
 }
 
 template<typename T>
-int HashTable<T>::Hash(T key, int tamanho) {
-    int valor_hash = 0;
-    const size_t n = key.length();
+// peguei exatamet a funcao da outra vez
+int HashTable<T>::Hash(const T& key) const {
+    size_t hashValue = 0;
+    const size_t base = 128;
 
-    for (size_t i = 0; i < n; ++i) {
-        size_t potencia = 1;
-        for (size_t j = 0; j < n - i - 1; ++j) {
-            potencia *= 128;
-        }
-        valor_hash += key[i] * potencia;
-        valor_hash %= tamanho;
+    for (char c : key) {
+        // A mágica final: static_cast para unsigned char
+        // Garante que nenhum caractere seja tratado como negativo.
+        hashValue = (hashValue * base + static_cast<unsigned char>(c)) % SIZE;
     }
-    return valor_hash;
+    return hashValue;
 }
 
 template<typename T>
 void HashTable<T>::insert(T item) {
-    int indice = Hash(item, SIZE);
-
+    int indice = Hash(item);
     // garantindo que existe kkk
     if (tabela[indice] == nullptr) {
         tabela[indice] = new BST<T>();
@@ -458,24 +452,24 @@ void HashTable<T>::insert(T item) {
 
 template<typename T>
 void HashTable<T>::remove(T item) {
-    int indice = Hash(item, SIZE);
+    int indice = Hash(item);
 
     if (tabela[indice] == nullptr) {
         return;
     }
 
-    tabela[Hash(item, SIZE)]->Remove(item);
+    tabela[Hash(item)]->Remove(item);
 }
 
 template<typename T>
 bool HashTable<T>::search(T item) {
-    int indice = Hash(item, SIZE);
+    int indice = Hash(item);
 
     if (tabela[indice] == nullptr) {
         return false;
     }
 
-    BSTNode<T>* temp = tabela[Hash(item, SIZE)]->Search(item);
+    BSTNode<T>* temp = tabela[Hash(item)]->Search(item);
 
     if (temp == nullptr) {
         return false;
@@ -485,40 +479,70 @@ bool HashTable<T>::search(T item) {
 }
 
 // FUNCOES AUXILIARES AQUI
-string limpador(string palavra) {
+string limpador(const string& palavra) {
     string cleaned;
     for (char c : palavra) {
-        if (!ispunct(c)) cleaned += c;;
+        if (!ispunct(c)) cleaned += c;
     }
-    if (!cleaned.empty()) {
-        return cleaned;
-    }
-    return "";
+    return cleaned;
 }
 
 int main() {
     HashTable<string> tabela;
     string palavra;
 
-    // Loop para ler as palavras ate achar o "###"
-    // pq demora tantooooooooooooooooooooooooooooooooooooooooooo
+    // O loop para QUANDO a palavra lida for "###"
     while (cin >> palavra && palavra != "###") {
-        string palavraLimpa = limpador(palavra);
-        if (!palavraLimpa.empty()) {
-            tabela.insert(palavraLimpa);
+        string limpa;
+        limpa = limpador(palavra);
+        if (!limpa.empty()) {
+            tabela.insert(limpa);
         }
     }
 
-    // dps do loop, proxima palavra e a chave
-    string palavraChave;
-    if (cin >> palavraChave) {
-        string chaveLimpa = limpador(palavraChave);
-        if (!chaveLimpa.empty()) {
-            tabela.buscarMostrarAltura(chaveLimpa);
+    // ---- AGORA O PROGRAMA CHEGA AQUI ----
+    // USANDO VECTOR APENAS PARA TESTAR AS PALAVRAS CHAVES
+    // USANDO PRA ARMAZENAR AS ALTURAS
+    // -1 REPRESENTA NAO ENCONTRADO
+
+    // como usar o testador -> COLE O TEXTO BASE E Dê ENTER DUAS VEZES
+    vector<std::string> nomes = {
+        "Frodo", "Bilbo", "Legolas", "Pippin", "Merry",
+        "Galadriel", "Butterbur", "Sam", "Faramir", "Peregrin",
+        "Gandalf", "Gollum", "Bombadil", "Elrond", "Sauron",
+        "Aragorn", "Saruman", "Gildor", "Elanor", "Morgoth"
+    };
+    vector<int> valores = {
+        6, 6, -1, 7, 7, -1, 6, 6, -1,
+        6, 7, 7, 6, 7, 6, 6, 6, 6, -1, -1
+    };
+
+    int erro_n = 0;
+    int acerto_n = 0;
+
+    for (int i = 0; i < valores.size(); i++) {
+        string palavraChave = limpador(nomes[i]);
+        /*
+        if (!palavraChave.empty()) {
+            if (tabela.buscarMostrarAltura(palavraChave) != -1) {
+                cout << palavraChave << tabela.buscarMostrarAltura(palavraChave) << endl;
+            } else {
+                cout << "Nao encontrado" << endl;
+            }
+           }
+        */
+        if (tabela.buscarMostrarAltura(palavraChave) == valores[i]) {
+            cout << palavraChave << ": " << tabela.buscarMostrarAltura(palavraChave) << " - "<< "CORRETO" << endl;
+            acerto_n++;
         } else {
-            cout << "Nao encontrado" << endl;
+            cout << palavraChave << ": " << tabela.buscarMostrarAltura(palavraChave) << " - " << "ERRADO" << endl;
+            erro_n++;
         }
     }
+
+    cout << endl;
+    cout << "acertos: " << acerto_n << endl;
+    cout << "erros: " << erro_n << endl;
 
     return 0;
 }
