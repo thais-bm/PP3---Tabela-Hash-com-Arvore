@@ -86,7 +86,6 @@ template<typename T> List<T>::List()
 
 template<typename T> void List<T>::succ(Node<T> *&p) { p = p->next; }
 
-
 template<typename T> void List<T>::pred(Node<T> *&p)
 {
     Node<T> *q = pHead;
