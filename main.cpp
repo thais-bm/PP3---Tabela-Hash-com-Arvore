@@ -1,8 +1,234 @@
 #include <cstring>
+#include <cctype>     // Garanta que está incluído para o limpador
 #include <iostream>
 #include <cmath>
+
 #include <vector>
 using namespace std;
+
+// Classe Lista
+// Class Node
+template<typename T> class Node {
+private:
+    T item;
+
+public:
+    Node<T>* left;
+    Node<T>* right;
+    Node<T> *next;
+    Node<T> *prev;
+    Node<T> *parent;
+    T getItem();
+    Node();
+    Node(T item);
+    int height;
+    int balanceFactor;
+
+};
+
+template<typename T>
+Node<T>::Node() {
+    next = nullptr;
+    prev = nullptr;
+    left = nullptr;
+    right = nullptr;
+    parent = nullptr;
+    height = 0;
+    balanceFactor = 0;
+}
+
+template<typename T>
+Node<T>::Node(T item) {
+    this->item = item;
+    next = nullptr;
+    prev = nullptr;
+     left = nullptr;
+    right = nullptr;
+    parent = nullptr;
+    height = 0;
+    balanceFactor = 0;
+}
+
+template<typename T> T Node<T>::getItem() { return item; }
+
+template<typename T> class ListNavigator;
+
+// Class List
+template<typename T> class List {
+private:
+    Node<T> *pHead;
+    Node<T> *pBack;
+    int numItems;
+    void succ(Node<T> *&p);
+    void pred(Node<T> *&p);
+
+public:
+    void insertFront(T item);
+    void insertBack(T item);
+    void removeFront();
+    void removeBack();
+    T getItemFront();
+    T getItemBack();
+    ListNavigator<T> getListNavigator() const;
+    int size();
+    bool empty();
+    List();
+    Node<T>* getHead();
+};
+
+template<typename T> List<T>::List()
+{
+    pHead = new Node<T>();
+    pBack = pHead;
+    pHead->next = nullptr;
+    numItems = 0;
+}
+
+template<typename T> void List<T>::succ(Node<T> *&p) { p = p->next; }
+
+
+template<typename T> void List<T>::pred(Node<T> *&p)
+{
+    Node<T> *q = pHead;
+    while (q->next != p) {
+        succ(q);
+    }
+    p = q;
+}
+
+template<typename T> void List<T>::insertFront(T item)
+{
+    Node<T> *pNew = new Node<T>(item);
+    pNew->next = pHead->next;
+    pHead->next = pNew;
+    pNew->prev = pHead;
+
+    if (pBack == pHead) {
+      pBack = pNew;
+    }
+    numItems++;
+}
+
+template<typename T> void List<T>::insertBack(T item)
+{
+    Node<T> *pNew = new Node<T>(item);
+    pBack->next = pNew;
+    pNew->prev = pBack;
+    pBack = pNew;
+    numItems++;
+}
+
+template<typename T> void List<T>::removeFront()
+{
+    if (empty()) {
+      cout << "List is empty" << endl;
+      return;
+    }
+
+    Node<T> *temp = pHead->next;
+    pHead->next = temp->next;
+
+    if (pBack == temp) {
+      pBack = pHead;
+    }
+
+    delete temp;
+    numItems--;
+}
+
+template<typename T> void List<T>::removeBack()
+{
+    if (empty()) {
+        cout << "List is empty" << endl;
+    }
+
+    Node<T> *temp = pBack;
+    pred(pBack);
+    pBack->next = nullptr;
+
+    delete temp;
+
+    if (pHead == pBack) {
+        pHead = pBack;
+    }
+    numItems--;
+}
+
+template<typename T> T List<T>::getItemFront()
+{
+    if (empty()) {
+      return T();
+    }
+
+    return pHead->next->getItem();
+}
+
+template<typename T> T List<T>::getItemBack()
+{
+    if (empty()) {
+      return T();
+    }
+
+    return pBack->getItem();
+}
+
+template<typename T> ListNavigator<T> List<T>::getListNavigator() const
+{
+    return ListNavigator<T>(pHead->next);
+}
+
+template<typename T> int List<T>::size(){
+    return numItems;
+}
+
+template<typename T> bool List<T>::empty() { return pBack == pHead; }
+
+template<typename T> Node<T>* List<T>::getHead() { return pHead; }
+
+// ListNavigator
+template<typename T> class ListNavigator {
+private:
+    Node<T> *current;
+    Node<T> *start;
+    int currentPosition;
+
+public:
+    bool end();
+    void next();
+    void reset();
+    bool getCurrentItem(T &item);
+    int  getCurrentPosition() const;
+    ListNavigator(Node<T> *current);
+    T getCurrentItem();
+    Node<T> *getCurrentNode() { return current; }
+};
+
+template<typename T> ListNavigator<T>::ListNavigator(Node<T> *current)
+{
+    this->current = current;
+    this->start = current;
+}
+
+template<typename T> bool ListNavigator<T>::end() { return current == nullptr; }
+
+template<typename T> void ListNavigator<T>::next() {
+        current = current->next;
+}
+
+template<typename T> void ListNavigator<T>::reset() { current = start; }
+
+template<typename T> bool ListNavigator<T>::getCurrentItem (T &item)
+{
+    if (current == nullptr) {
+      return false;
+    }
+    item = current->getItem();
+    return true;
+}
+
+template<typename T> T ListNavigator<T>::getCurrentItem() { return current->getItem();}
+
+template<typename T> int ListNavigator<T>::getCurrentPosition() const { return currentPosition; }
 
 // Nó da Árvore Binária de Busca (BST)
 template <typename T>
@@ -74,7 +300,6 @@ private:
     BSTNode<T>* RemoveHelper(BSTNode<T>* currentNode, const T& item);
 
     int getNodeHeight(BSTNode<T>* node) const;
-
     void destroy(BSTNode<T>* node);
 
 public:
@@ -90,6 +315,10 @@ public:
     void Insert(const T& item);
 
     void Remove(const T &item);
+
+    void generateDot(BSTNode<T> *node, std::ostream &out);
+
+    void drawTree(BSTNode<T> *root);
 };
 
 template<typename T>
@@ -356,10 +585,33 @@ EDIT: por via das duvidas, transformei em void, meio que nem é necessario devol
 */
 
 }
-/*
- *
- *
-*/
+
+// DESENHADOR DE AUTOMATO
+template <typename T>
+void BST<T>::generateDot(BSTNode<T>* node, std::ostream& out) {
+    if (node == nullptr) {
+        return;
+    }
+    // Adiciona o nó atual com a altura
+    out << "    " << node->getItem() << " [label=\"" << node->getItem() << "\\nAltura: " << node->getHeight() << "\"];\n";
+    // Conecta o nó atual aos filhos
+    if (node->getLeft() != nullptr) {
+        out << "    " << node->getItem() << " -> " << node->getLeft()->getItem() << ";\n";
+    }
+    if (node->getRight()) {
+        out << "    " << node->getItem() << " -> " << node->getRight()->getItem() << ";\n";
+        // Chama recursivamente para os filhos
+        generateDot(node->getLeft(), out);
+        generateDot(node->getRight(), out);
+    }
+}
+
+template <typename T>
+void BST<T>::drawTree(BSTNode<T>* root) {
+    std::cout << "digraph G {\n";
+    generateDot(root, std::cout);
+    std::cout << "}\n";
+}
 
 // Hash Table
 template <typename T>
@@ -375,8 +627,8 @@ private:
     //alguem vai ler isso depois pode ser engracado seila
     //diminuir nossa nota nao vai
     //comentarios contam uma historia
-    int Hash(const T& item) const;
-    int SIZE = 151;
+    size_t Hash(const T& item);
+    size_t SIZE = 151;
 public:
     void insert(T item);
     void remove(T item); //na teoria nao precisa remover nada pra fazer o que precisa no hackerrank..
@@ -422,19 +674,22 @@ auto HashTable<T>::buscarMostrarAltura(T key) {
     if (noAchado == nullptr) {
         return -1;
     }
+
+    // DEBUG: PRINTAR CODIGO DOT PARA ARVORE
+    cout << "CODIGO DOT DE: " << noAchado->getItem() << endl;
+    tabela[indice]->drawTree(arvore->getRoot());
+    cout << endl;
     return arvore->getRoot()->getHeight();
 }
 
 template<typename T>
 // peguei exatamet a funcao da outra vez
-int HashTable<T>::Hash(const T& key) const {
+size_t HashTable<T>::Hash(const T& key) {
     size_t hashValue = 0;
-    const size_t base = 128;
-
-    for (char c : key) {
-        // A mágica final: static_cast para unsigned char
-        // Garante que nenhum caractere seja tratado como negativo.
-        hashValue = (hashValue * base + static_cast<unsigned char>(c)) % SIZE;
+    size_t n = key.length();
+    for (size_t i = 0; i < n; ++i) {
+        hashValue += key[i] * static_cast<size_t>(std::pow(128, n - i - 1));
+        hashValue %= SIZE; // Aplica o módulo a cada iteração
     }
     return hashValue;
 }
@@ -480,31 +735,48 @@ bool HashTable<T>::search(T item) {
 
 // FUNCOES AUXILIARES AQUI
 string limpador(const string& palavra) {
-    string cleaned;
-    for (char c : palavra) {
+    string cleaned = "";
+    for (char c: palavra) {
         if (!ispunct(c)) cleaned += c;
     }
-    return cleaned;
+
+    if (!cleaned.empty()) {
+        return cleaned;
+    }
 }
 
-int main() {
-    HashTable<string> tabela;
-    string palavra;
 
-    // O loop para QUANDO a palavra lida for "###"
+
+int main() {
+    /*
+     *  Atualização aqui: Coloquei List e as funcoes originais que o professor colocou no
+     *  Classroom
+     *  Agora da 6 erros -> Pippin, Elegrin, Elrond, Sauron, Sauram, Gildor
+     *  Ta com teste semiautomatizado: So colocar o testo e deixar ele rodar
+     *  A versao que tem 4 erros ta salva no github, ent da pra voltar
+     *  Amanha posso ajudar mais um pouco
+    */
+    List<string> lista_arvore;
+    HashTable<string> tabela;
+    string palavra, limpar;
+
     while (cin >> palavra && palavra != "###") {
-        string limpa;
-        limpa = limpador(palavra);
-        if (!limpa.empty()) {
-            tabela.insert(limpa);
-        }
+        limpar.clear();
+        limpar = limpador(palavra);
+        lista_arvore.insertBack(limpar);
+        limpar.clear();
     }
 
-    // ---- AGORA O PROGRAMA CHEGA AQUI ----
+    while (!lista_arvore.empty()) {
+        tabela.insert(lista_arvore.getItemFront());
+        lista_arvore.removeFront();
+    }
+
+    // ---- TESTADOR DE PROGRAMA AQUI ----
+    // TERMINOU? NAO ESQUECER DE TIRAR O INCLUDE <vector>
     // USANDO VECTOR APENAS PARA TESTAR AS PALAVRAS CHAVES
     // USANDO PRA ARMAZENAR AS ALTURAS
     // -1 REPRESENTA NAO ENCONTRADO
-
     // como usar o testador -> COLE O TEXTO BASE E Dê ENTER DUAS VEZES
     vector<std::string> nomes = {
         "Frodo", "Bilbo", "Legolas", "Pippin", "Merry",
@@ -531,6 +803,7 @@ int main() {
             }
            }
         */
+
         if (tabela.buscarMostrarAltura(palavraChave) == valores[i]) {
             cout << palavraChave << ": " << tabela.buscarMostrarAltura(palavraChave) << " - "<< "CORRETO" << endl;
             acerto_n++;
@@ -545,6 +818,7 @@ int main() {
     cout << "erros: " << erro_n << endl;
 
     return 0;
+
 }
 
 
